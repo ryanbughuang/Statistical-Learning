@@ -1,0 +1,271 @@
+<html>
+<head>
+<title>hw2_Statistical Learning.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #808080;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+hw2_Statistical Learning.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">pandas </span><span class="s0">as </span><span class="s1">pd</span>
+<span class="s0">import </span><span class="s1">numpy </span><span class="s0">as </span><span class="s1">np</span>
+<span class="s0">from </span><span class="s1">sklearn </span><span class="s0">import </span><span class="s1">linear_model</span>
+<span class="s0">import </span><span class="s1">matplotlib</span>
+matplotlib.use(<span class="s2">'TkAgg'</span><span class="s1">)</span>
+<span class="s0">import </span><span class="s1">matplotlib.pyplot </span><span class="s0">as </span><span class="s1">plt</span>
+
+<span class="s3"># Import data</span>
+<span class="s1">train_path = </span><span class="s2">'/Users/ryanhuang/Desktop/107-2/statistical learning/Assignments/Assign2/qonly/df1_train.csv'</span>
+<span class="s1">y_test_path = </span><span class="s2">'/Users/ryanhuang/Desktop/107-2/statistical learning/Assignments/Assign2/qonly/df1_test1y.csv'</span>
+<span class="s1">x_test_path = </span><span class="s2">'/Users/ryanhuang/Desktop/107-2/statistical learning/Assignments/Assign2/qonly/df1_test1.csv'</span>
+
+<span class="s3">#</span>
+<span class="s1">train = pd.read_csv(train_path).astype(</span><span class="s2">'float64'</span><span class="s1">)</span>
+x_train_keep = train.iloc[:<span class="s0">,</span><span class="s4">1</span><span class="s1">:]</span>
+x_test_keep = pd.read_csv(x_test_path)
+
+<span class="s3"># Y Preprocessing</span>
+<span class="s1">y_train_keep = train.iloc[:</span><span class="s0">,</span><span class="s4">0</span><span class="s1">]</span>
+y_train_demean = y_train_keep - y_train_keep.mean()
+y_test_keep = pd.read_csv(y_test_path).astype(<span class="s2">'float64'</span><span class="s1">)</span>
+
+
+<span class="s3"># X Preprocessing</span>
+<span class="s0">def </span><span class="s1">is_binary(series</span><span class="s0">, </span><span class="s1">allow_na=</span><span class="s0">False</span><span class="s1">):</span>
+    <span class="s0">if </span><span class="s1">allow_na:</span>
+        series.dropna(inplace=<span class="s0">True</span><span class="s1">)</span>
+    <span class="s0">return </span><span class="s1">sorted(series.unique()) == [</span><span class="s4">0</span><span class="s0">, </span><span class="s4">1</span><span class="s1">]</span>
+
+
+<span class="s0">def </span><span class="s1">std_feature(dataframe</span><span class="s0">, </span><span class="s1">dataframe_applied</span><span class="s0">, </span><span class="s1">std_on):</span>
+    a = dataframe_applied.copy()
+    <span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range(dataframe.shape[</span><span class="s4">1</span><span class="s1">]):</span>
+        <span class="s0">if </span><span class="s1">is_binary(dataframe.iloc[:</span><span class="s0">,</span><span class="s1">i]):</span>
+            <span class="s0">if </span><span class="s2">'bin' </span><span class="s0">in </span><span class="s1">std_on:</span>
+                a.iloc[:<span class="s0">, </span><span class="s1">i] = (dataframe_applied.iloc[:</span><span class="s0">, </span><span class="s1">i] - dataframe.iloc[:</span><span class="s0">, </span><span class="s1">i].mean()) / dataframe.iloc[:</span><span class="s0">, </span><span class="s1">i].std()</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s0">pass</span>
+        else<span class="s1">:</span>
+            <span class="s0">if </span><span class="s2">'cont' </span><span class="s0">in </span><span class="s1">std_on:</span>
+                a.iloc[:<span class="s0">, </span><span class="s1">i] = (dataframe_applied.iloc[:</span><span class="s0">, </span><span class="s1">i] - dataframe.iloc[:</span><span class="s0">, </span><span class="s1">i].mean()) / dataframe.iloc[:</span><span class="s0">, </span><span class="s1">i].std()</span>
+            <span class="s0">else</span><span class="s1">:</span>
+                <span class="s0">pass</span>
+    return <span class="s1">a</span>
+
+x_train_std_cont = std_feature(x_train_keep<span class="s0">,</span><span class="s1">x_train_keep</span><span class="s0">, </span><span class="s1">std_on=[</span><span class="s2">'cont'</span><span class="s1">])</span>
+x_train_std_bin = std_feature(x_train_keep<span class="s0">,</span><span class="s1">x_train_keep</span><span class="s0">, </span><span class="s1">std_on=[</span><span class="s2">'bin'</span><span class="s1">])</span>
+x_train_std_all = std_feature(x_train_keep<span class="s0">,</span><span class="s1">x_train_keep</span><span class="s0">, </span><span class="s1">std_on=[</span><span class="s2">'cont'</span><span class="s0">,</span><span class="s2">'bin'</span><span class="s1">])</span>
+
+x_test_std_cont = std_feature(x_train_keep<span class="s0">,</span><span class="s1">x_test_keep</span><span class="s0">, </span><span class="s1">std_on=[</span><span class="s2">'cont'</span><span class="s1">])</span>
+x_test_std_bin = std_feature(x_train_keep<span class="s0">,</span><span class="s1">x_test_keep</span><span class="s0">, </span><span class="s1">std_on=[</span><span class="s2">'bin'</span><span class="s1">])</span>
+x_test_std_all = std_feature(x_train_keep<span class="s0">,</span><span class="s1">x_test_keep</span><span class="s0">, </span><span class="s1">std_on=[</span><span class="s2">'cont'</span><span class="s0">,</span><span class="s2">'bin'</span><span class="s1">])</span>
+
+
+<span class="s3"># EDA on train Data</span>
+<span class="s1">cont = []</span>
+bin = []
+<span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range(train.shape[</span><span class="s4">1</span><span class="s1">]):</span>
+    <span class="s0">if </span><span class="s1">is_binary(train.iloc[:</span><span class="s0">,</span><span class="s1">i]):</span>
+        bin.append(i)
+    <span class="s0">else</span><span class="s1">:</span>
+        cont.append(i)
+<span class="s3"># Summary statistics</span>
+<span class="s1">train.describe()</span>
+
+<span class="s3"># For continuous Xs and Y, use scatter plot matrix</span>
+<span class="s1">pd.plotting.scatter_matrix(train.iloc[:</span><span class="s0">,</span><span class="s1">cont]</span><span class="s0">, </span><span class="s1">alpha = </span><span class="s4">0.2</span><span class="s0">, </span><span class="s1">diagonal = </span><span class="s2">'hist'</span><span class="s1">)</span>
+
+<span class="s3"># For binary Xs, use boxplots</span>
+# boxplot on hour2~hour14
+<span class="s1">hour = train.iloc[:</span><span class="s0">,</span><span class="s1">[</span><span class="s4">0</span><span class="s1">]+bin[-</span><span class="s4">13</span><span class="s1">:]].reset_index().melt(</span>
+                id_vars=[<span class="s2">'index'</span><span class="s0">,</span><span class="s2">&quot;life_post_consumer&quot;</span><span class="s1">]</span><span class="s0">,   </span><span class="s3">#要保留的主字段</span>
+                <span class="s1">var_name=</span><span class="s2">&quot;time&quot;</span><span class="s0">,                     </span><span class="s3">#拉長的分類</span>
+                <span class="s1">value_name=</span><span class="s2">&quot;value&quot;</span><span class="s1">)</span>
+boxplot_hour = hour.loc[hour[<span class="s2">'value'</span><span class="s1">]&gt;</span><span class="s4">0</span><span class="s0">,</span><span class="s1">[</span><span class="s2">'life_post_consumer'</span><span class="s0">,</span><span class="s2">'time'</span><span class="s1">]].boxplot(by=</span><span class="s2">'time'</span><span class="s0">,</span><span class="s1">rot=</span><span class="s4">45</span><span class="s1">)</span>
+plt.ylabel(<span class="s2">'life_post_consumer'</span><span class="s1">)</span>
+plt.title(<span class="s2">''</span><span class="s1">)</span>
+plt.show()
+
+<span class="s3"># boxplot on dow</span>
+<span class="s1">dow = train.iloc[:</span><span class="s0">,</span><span class="s1">[</span><span class="s4">0</span><span class="s1">]+bin[-</span><span class="s4">19</span><span class="s1">:-</span><span class="s4">13</span><span class="s1">]]</span>
+dow[<span class="s2">'dow7'</span><span class="s1">] = train.iloc[:</span><span class="s0">,</span><span class="s1">bin[-</span><span class="s4">19</span><span class="s1">:-</span><span class="s4">13</span><span class="s1">]].apply(</span><span class="s0">lambda </span><span class="s1">col: </span><span class="s4">1 </span><span class="s0">if </span><span class="s1">col.sum() == </span><span class="s4">0 </span><span class="s0">else </span><span class="s4">0</span><span class="s0">, </span><span class="s1">axis=</span><span class="s4">1</span><span class="s1">)</span>
+dow = dow.reset_index().melt(
+            id_vars=[<span class="s2">'index'</span><span class="s0">,</span><span class="s2">&quot;life_post_consumer&quot;</span><span class="s1">]</span><span class="s0">,   </span><span class="s3">#要保留的主字段</span>
+            <span class="s1">var_name=</span><span class="s2">&quot;dow&quot;</span><span class="s0">,                     </span><span class="s3">#拉長的分類</span>
+            <span class="s1">value_name=</span><span class="s2">&quot;value&quot;</span><span class="s1">)</span>
+boxplot_dow = dow.loc[dow[<span class="s2">'value'</span><span class="s1">]&gt;</span><span class="s4">0</span><span class="s0">,</span><span class="s1">[</span><span class="s2">'life_post_consumer'</span><span class="s0">,</span><span class="s2">'dow'</span><span class="s1">]].boxplot(by=</span><span class="s2">'dow'</span><span class="s0">,</span><span class="s1">rot=</span><span class="s4">45</span><span class="s1">)</span>
+plt.ylabel(<span class="s2">'life_post_consumer'</span><span class="s1">)</span>
+plt.title(<span class="s2">''</span><span class="s1">)</span>
+plt.show()
+
+<span class="s3"># boxplot on month</span>
+<span class="s1">month = train.iloc[:</span><span class="s0">,</span><span class="s1">[</span><span class="s4">0</span><span class="s1">]+bin[</span><span class="s4">6</span><span class="s1">:</span><span class="s4">17</span><span class="s1">]]</span>
+month[<span class="s2">'month12'</span><span class="s1">] = train.iloc[:</span><span class="s0">,</span><span class="s1">bin[</span><span class="s4">6</span><span class="s1">:</span><span class="s4">17</span><span class="s1">]].apply(</span><span class="s0">lambda </span><span class="s1">col: </span><span class="s4">1 </span><span class="s0">if </span><span class="s1">col.sum() == </span><span class="s4">0 </span><span class="s0">else </span><span class="s4">0</span><span class="s0">, </span><span class="s1">axis=</span><span class="s4">1</span><span class="s1">)</span>
+month = month.reset_index().melt(
+            id_vars=[<span class="s2">'index'</span><span class="s0">,</span><span class="s2">&quot;life_post_consumer&quot;</span><span class="s1">]</span><span class="s0">,   </span><span class="s3">#要保留的主字段</span>
+            <span class="s1">var_name=</span><span class="s2">&quot;month&quot;</span><span class="s0">,                     </span><span class="s3">#拉長的分類</span>
+            <span class="s1">value_name=</span><span class="s2">&quot;value&quot;</span><span class="s1">)</span>
+boxplot_month = month.loc[month[<span class="s2">'value'</span><span class="s1">]&gt;</span><span class="s4">0</span><span class="s0">,</span><span class="s1">[</span><span class="s2">'life_post_consumer'</span><span class="s0">,</span><span class="s2">'month'</span><span class="s1">]].boxplot(by=</span><span class="s2">'month'</span><span class="s0">,</span><span class="s1">rot=</span><span class="s4">45</span><span class="s1">)</span>
+plt.ylabel(<span class="s2">'life_post_consumer'</span><span class="s1">)</span>
+plt.title(<span class="s2">''</span><span class="s1">)</span>
+plt.show()
+
+<span class="s3"># boxplot on cat</span>
+<span class="s1">cat = train.iloc[:</span><span class="s0">,</span><span class="s1">[</span><span class="s4">0</span><span class="s1">]+bin[</span><span class="s4">4</span><span class="s1">:</span><span class="s4">6</span><span class="s1">]]</span>
+cat[<span class="s2">'cat1'</span><span class="s1">] = train.iloc[:</span><span class="s0">,</span><span class="s1">bin[</span><span class="s4">4</span><span class="s1">:</span><span class="s4">6</span><span class="s1">]].apply(</span><span class="s0">lambda </span><span class="s1">col: </span><span class="s4">1 </span><span class="s0">if </span><span class="s1">col.sum() == </span><span class="s4">0 </span><span class="s0">else </span><span class="s4">0</span><span class="s0">, </span><span class="s1">axis=</span><span class="s4">1</span><span class="s1">)</span>
+cat = cat.reset_index().melt(
+            id_vars=[<span class="s2">'index'</span><span class="s0">,</span><span class="s2">&quot;life_post_consumer&quot;</span><span class="s1">]</span><span class="s0">,   </span><span class="s3">#要保留的主字段</span>
+            <span class="s1">var_name=</span><span class="s2">&quot;cat&quot;</span><span class="s0">,                     </span><span class="s3">#拉長的分類</span>
+            <span class="s1">value_name=</span><span class="s2">&quot;value&quot;</span><span class="s1">)</span>
+boxplot_cat = cat.loc[month[<span class="s2">'value'</span><span class="s1">]&gt;</span><span class="s4">0</span><span class="s0">,</span><span class="s1">[</span><span class="s2">'life_post_consumer'</span><span class="s0">,</span><span class="s2">'cat'</span><span class="s1">]].boxplot(by=</span><span class="s2">'cat'</span><span class="s0">,</span><span class="s1">rot=</span><span class="s4">45</span><span class="s1">)</span>
+plt.ylabel(<span class="s2">'life_post_consumer'</span><span class="s1">)</span>
+plt.title(<span class="s2">''</span><span class="s1">)</span>
+plt.show()
+
+<span class="s3"># boxplot on type</span>
+<span class="s1">type = train.iloc[:</span><span class="s0">,</span><span class="s1">[</span><span class="s4">0</span><span class="s1">]+bin[</span><span class="s4">1</span><span class="s1">:</span><span class="s4">4</span><span class="s1">]]</span>
+type[<span class="s2">'type_photo'</span><span class="s1">] = train.iloc[:</span><span class="s0">,</span><span class="s1">bin[</span><span class="s4">1</span><span class="s1">:</span><span class="s4">4</span><span class="s1">]].apply(</span><span class="s0">lambda </span><span class="s1">col: </span><span class="s4">1 </span><span class="s0">if </span><span class="s1">col.sum() == </span><span class="s4">0 </span><span class="s0">else </span><span class="s4">0</span><span class="s0">, </span><span class="s1">axis=</span><span class="s4">1</span><span class="s1">)</span>
+type = type.reset_index().melt(
+            id_vars=[<span class="s2">'index'</span><span class="s0">,</span><span class="s2">&quot;life_post_consumer&quot;</span><span class="s1">]</span><span class="s0">,   </span><span class="s3">#要保留的主字段</span>
+            <span class="s1">var_name=</span><span class="s2">&quot;type&quot;</span><span class="s0">,                     </span><span class="s3">#拉長的分類</span>
+            <span class="s1">value_name=</span><span class="s2">&quot;value&quot;</span><span class="s1">)</span>
+boxplot_type = type.loc[type[<span class="s2">'value'</span><span class="s1">]&gt;</span><span class="s4">0</span><span class="s0">,</span><span class="s1">[</span><span class="s2">'life_post_consumer'</span><span class="s0">,</span><span class="s2">'type'</span><span class="s1">]].boxplot(by=</span><span class="s2">'type'</span><span class="s0">,</span><span class="s1">rot=</span><span class="s4">45</span><span class="s1">)</span>
+plt.ylabel(<span class="s2">'life_post_consumer'</span><span class="s1">)</span>
+plt.title(<span class="s2">''</span><span class="s1">)</span>
+plt.show()
+
+<span class="s3"># boxplot on paid</span>
+<span class="s1">paid = train.iloc[:</span><span class="s0">,</span><span class="s1">[</span><span class="s4">0</span><span class="s1">]+[bin[</span><span class="s4">0</span><span class="s1">]]]</span>
+boxplot_paid = paid.boxplot(by=<span class="s2">'Paid'</span><span class="s1">)</span>
+plt.ylabel(<span class="s2">'life_post_consumer'</span><span class="s1">)</span>
+plt.title(<span class="s2">''</span><span class="s1">)</span>
+plt.show()
+
+<span class="s0">def </span><span class="s1">RMSE(predict_value</span><span class="s0">, </span><span class="s1">actual_value):</span>
+    <span class="s0">return </span><span class="s1">(np.sqrt(np.sum((predict_value - np.asarray(actual_value.T)) ** </span><span class="s4">2</span><span class="s0">, </span><span class="s1">axis=</span><span class="s4">1</span><span class="s1">)) / len(predict_value))[</span><span class="s4">0</span><span class="s1">]</span>
+
+<span class="s3"># Question 2</span>
+<span class="s1">q2_pred_y = np.asarray([y_train_keep.mean()] * len(y_test_keep))</span>
+q2_rmse = RMSE(q2_pred_y<span class="s0">, </span><span class="s1">y_test_keep)</span>
+
+
+<span class="s3"># Question 3</span>
+<span class="s1">q3_reg = linear_model.LinearRegression().fit(x_train_keep</span><span class="s0">, </span><span class="s1">y_train_keep)</span>
+q3_pred_y = q3_reg.predict(x_test_keep)
+q3_rmse = RMSE(q3_pred_y<span class="s0">, </span><span class="s1">y_test_keep)</span>
+
+<span class="s3"># Question 4</span>
+<span class="s1">q4_reg = linear_model.LinearRegression().fit(x_train_keep</span><span class="s0">, </span><span class="s1">y_train_demean)</span>
+q4_pred_y = q4_reg.predict(x_test_keep) + y_train_keep.mean()
+q4_rmse = RMSE(q4_pred_y<span class="s0">, </span><span class="s1">y_test_keep)</span>
+
+<span class="s3"># Question 5</span>
+<span class="s1">q5_reg = linear_model.LinearRegression().fit(x_train_std_all</span><span class="s0">, </span><span class="s1">y_train_demean)</span>
+q5_pred = q5_reg.predict(x_test_std_all) + y_train_keep.mean()
+q5_rmse = RMSE(q5_pred<span class="s0">, </span><span class="s1">y_test_keep)</span>
+
+<span class="s3"># Initial alpha_list for hyperparameter tuning</span>
+<span class="s1">alpha_list = [</span><span class="s4">0.01</span><span class="s0">, </span><span class="s4">0.1</span><span class="s0">, </span><span class="s4">1</span><span class="s0">, </span><span class="s4">5</span><span class="s0">, </span><span class="s4">10</span><span class="s0">, </span><span class="s4">20</span><span class="s0">, </span><span class="s4">50</span><span class="s0">, </span><span class="s4">100</span><span class="s0">, </span><span class="s4">500</span><span class="s0">, </span><span class="s4">1000</span><span class="s1">]</span>
+
+<span class="s3"># Question 6</span>
+<span class="s1">q6_rmse = []</span>
+<span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">alpha_list:</span>
+    q6_reg = linear_model.Ridge(alpha=i).fit(x_train_keep<span class="s0">, </span><span class="s1">y_train_keep)</span>
+    q6_pred = q6_reg.predict(x_test_keep)
+    q6_rmse.append(RMSE(q6_pred<span class="s0">, </span><span class="s1">y_test_keep))</span>
+
+plt.figure()
+plt.plot(alpha_list<span class="s0">, </span><span class="s1">q6_rmse)</span>
+plt.show()
+
+q6_best_alpha = alpha_list[q6_rmse.index(min(q6_rmse))]
+q6_reg_20 = linear_model.Ridge(alpha=q6_best_alpha).fit(x_train_keep<span class="s0">, </span><span class="s1">y_train_keep)</span>
+q6_pred_20 = q6_reg_20.predict(x_test_keep[:<span class="s4">20</span><span class="s1">])</span>
+print(<span class="s2">'q6 best RMSE ='</span><span class="s0">, </span><span class="s1">min(q6_rmse)</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 pred y ='</span><span class="s0">, </span><span class="s1">q6_pred_20</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 actual y ='</span><span class="s0">, </span><span class="s1">np.asarray(y_test_keep[:</span><span class="s4">20</span><span class="s1">]).T[</span><span class="s4">0</span><span class="s1">])</span>
+
+
+<span class="s3"># Question 7</span>
+<span class="s1">q7_rmse = []</span>
+<span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">alpha_list:</span>
+    q7_reg = linear_model.Ridge(alpha=i).fit(x_train_std_cont<span class="s0">, </span><span class="s1">y_train_demean)</span>
+    q7_pred = q7_reg.predict(x_test_std_cont) + y_train_keep.mean()
+    q7_rmse.append(RMSE(q7_pred<span class="s0">, </span><span class="s1">y_test_keep))</span>
+
+plt.figure()
+plt.plot(alpha_list<span class="s0">, </span><span class="s1">q7_rmse)</span>
+plt.show()
+
+q7_best_alpha = alpha_list[q7_rmse.index(min(q7_rmse))]
+q7_reg_20 = linear_model.Ridge(alpha=q7_best_alpha).fit(x_train_std_cont<span class="s0">, </span><span class="s1">y_train_demean)</span>
+q7_pred_20 = q7_reg_20.predict(x_test_std_cont[:<span class="s4">20</span><span class="s1">]) + y_train_keep.mean()</span>
+print(<span class="s2">'q7 best RMSE ='</span><span class="s0">, </span><span class="s1">min(q7_rmse)</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 pred y ='</span><span class="s0">, </span><span class="s1">q7_pred_20</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 actual y ='</span><span class="s0">, </span><span class="s1">np.asarray(y_test_keep[:</span><span class="s4">20</span><span class="s1">]).T[</span><span class="s4">0</span><span class="s1">])</span>
+
+<span class="s3"># Question 8</span>
+<span class="s1">q8_rmse = []</span>
+<span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">alpha_list:</span>
+    q8_reg = linear_model.Ridge(alpha = i).fit(x_train_keep<span class="s0">, </span><span class="s1">y_train_demean)</span>
+    q8_pred = q8_reg.predict(x_test_keep) + y_train_keep.mean()
+    q8_rmse.append(RMSE(q8_pred<span class="s0">, </span><span class="s1">y_test_keep))</span>
+
+plt.figure()
+plt.plot(alpha_list<span class="s0">, </span><span class="s1">q8_rmse)</span>
+plt.show()
+
+q8_best_alpha = alpha_list[q8_rmse.index(min(q8_rmse))]
+q8_reg_20 = linear_model.Ridge(alpha=q8_best_alpha).fit(x_train_keep<span class="s0">, </span><span class="s1">y_train_demean)</span>
+q8_pred_20 = q8_reg_20.predict(x_test_keep[:<span class="s4">20</span><span class="s1">]) + y_train_keep.mean()</span>
+print(<span class="s2">'q8 best RMSE ='</span><span class="s0">, </span><span class="s1">min(q8_rmse)</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 pred y ='</span><span class="s0">, </span><span class="s1">q8_pred_20</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 actual y ='</span><span class="s0">, </span><span class="s1">np.asarray(y_test_keep[:</span><span class="s4">20</span><span class="s1">]).T[</span><span class="s4">0</span><span class="s1">])</span>
+
+<span class="s3"># Question 9</span>
+<span class="s1">q9_rmse = []</span>
+<span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">alpha_list:</span>
+    q9_reg = linear_model.Ridge(alpha = i).fit(x_train_std_all<span class="s0">, </span><span class="s1">y_train_demean)</span>
+    q9_pred = q9_reg.predict(x_test_std_all) + y_train_keep.mean()
+    q9_rmse.append(RMSE(q9_pred<span class="s0">, </span><span class="s1">y_test_keep))</span>
+
+plt.figure()
+plt.plot(alpha_list<span class="s0">, </span><span class="s1">q9_rmse)</span>
+plt.show()
+
+q9_best_alpha = alpha_list[q9_rmse.index(min(q9_rmse))]
+q9_reg_20 = linear_model.Ridge(alpha=q9_best_alpha).fit(x_train_std_all<span class="s0">, </span><span class="s1">y_train_demean)</span>
+q9_pred_20 = q9_reg_20.predict(x_test_std_all[:<span class="s4">20</span><span class="s1">]) + y_train_keep.mean()</span>
+print(<span class="s2">'q9 best RMSE ='</span><span class="s0">, </span><span class="s1">min(q9_rmse)</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 pred y ='</span><span class="s0">, </span><span class="s1">q9_pred_20</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 actual y ='</span><span class="s0">, </span><span class="s1">np.asarray(y_test_keep[:</span><span class="s4">20</span><span class="s1">]).T[</span><span class="s4">0</span><span class="s1">])</span>
+
+<span class="s3"># Question 10</span>
+<span class="s1">q10_rmse = []</span>
+<span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">alpha_list:</span>
+    q10_reg = linear_model.Lasso(alpha = i).fit(x_train_std_cont<span class="s0">, </span><span class="s1">y_train_demean)</span>
+    q10_pred = q10_reg.predict(x_test_std_cont) + y_train_keep.mean()
+    q10_rmse.append(RMSE(q10_pred<span class="s0">, </span><span class="s1">y_test_keep))</span>
+
+plt.figure()
+plt.plot(alpha_list<span class="s0">, </span><span class="s1">q10_rmse)</span>
+plt.show()
+
+q10_best_alpha = alpha_list[q10_rmse.index(min(q10_rmse))]
+q10_reg_20 = linear_model.Lasso(alpha=q10_best_alpha).fit(x_train_std_cont<span class="s0">, </span><span class="s1">y_train_demean)</span>
+q10_pred_20 = q10_reg_20.predict(x_test_std_cont[:<span class="s4">20</span><span class="s1">]) + y_train_keep.mean()</span>
+print(<span class="s2">'q10 best RMSE ='</span><span class="s0">, </span><span class="s1">min(q10_rmse)</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 pred y ='</span><span class="s0">, </span><span class="s1">q10_pred_20</span><span class="s0">, </span><span class="s2">'</span><span class="s0">\n</span><span class="s2">first 20 actual y ='</span><span class="s0">, </span><span class="s1">np.asarray(y_test_keep[:</span><span class="s4">20</span><span class="s1">]).T[</span><span class="s4">0</span><span class="s1">])</span>
+
+<span class="s3"># Question 11</span>
+
+<span class="s1">case_list = list(range(</span><span class="s4">1</span><span class="s0">,</span><span class="s4">10</span><span class="s1">))</span>
+rmse_list = [q2_rmse<span class="s0">, </span><span class="s1">q3_rmse</span><span class="s0">, </span><span class="s1">q4_rmse</span><span class="s0">, </span><span class="s1">q5_rmse</span><span class="s0">, </span><span class="s1">min(q6_rmse)</span><span class="s0">, </span><span class="s1">min(q7_rmse)</span><span class="s0">, </span><span class="s1">min(q8_rmse)</span><span class="s0">, </span><span class="s1">min(q9_rmse)</span><span class="s0">, </span><span class="s1">min(q10_rmse)]</span>
+plt.figure()
+plt.plot(case_list<span class="s0">, </span><span class="s1">rmse_list)</span>
+plt.ylabel(<span class="s2">'RMSE Value'</span><span class="s1">)</span>
+plt.xlabel(<span class="s2">'Case'</span><span class="s1">)</span>
+plt.show()
+</pre>
+</body>
+</html>
