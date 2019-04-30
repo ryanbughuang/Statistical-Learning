@@ -9,4 +9,4 @@ Assign2: Model comparison 模型比較
 
 Assign3: Generative and discriminative classification model 生成分類模型、判別分類模型實作
 
-Assign4: Dimensional reduction and visulization 降維及資料視覺化
+Assign4: Dimensional reduction and data visulization 降維及資料視覺化
