@@ -10,3 +10,5 @@ Assign2: Model comparison 模型比較
 Assign3: Generative and discriminative classification model 生成分類模型、判別分類模型實作
 
 Assign4: Dimensional reduction and data visulization 降維及資料視覺化
+
+Assign5: Time Series Prediction with Random Forest and Gaussian Process 時間預測模型（隨機森林、高斯過程）
